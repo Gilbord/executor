@@ -1,9 +1,8 @@
-import asyncio
 import logging
 import os
 import pickle
-from concurrent.futures.process import ProcessPoolExecutor
 from datetime import datetime
+from multiprocessing import Process
 from time import sleep
 
 import psycopg2
@@ -96,8 +95,5 @@ def start_worker():
 
 
 if __name__ == '__main__':
-    executor = ProcessPoolExecutor(max_workers=int(os.environ['MAX_TASK_NUMBER']))
-    loop = asyncio.get_event_loop()
     for _ in range(int(os.environ['MAX_TASK_NUMBER'])):
-        asyncio.ensure_future(loop.run_in_executor(executor, start_worker))
-    loop.run_forever()
+        Process(target=start_worker).start()
