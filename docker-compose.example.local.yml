@@ -15,9 +15,7 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_HOST: postgres
-    command:
-      >
-      python -m aiohttp.web -H 0.0.0.0 -P 5000 server.main:init
+    command: python -m aiohttp.web -H 0.0.0.0 -P 5000 server.main:init
     ports:
       - 5000:5000
     depends_on:
@@ -36,16 +34,12 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_HOST: postgres
       MAX_TASK_NUMBER: 2
-    command:
-      >
-      python -m executor.worker
+    command: python -m executor.worker
     depends_on:
       - redis
 
   postgres:
     image: postgres_executor:latest
-    ports:
-      - 5432:5432
     environment:
       POSTGRES_DB: executor
       POSTGRES_USER: user
