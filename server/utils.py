@@ -22,7 +22,7 @@ def fetch_by_one(db_cursor: cursor) -> Iterable[tuple]:
 
 def format_date(date: datetime) -> Optional[str]:
     """
-    Форматирует переданный объкт datetime в строку.
+    Форматирует переданный объект datetime в строку.
     Если date None, то возвращает None.
 
     :param date: Объект datetime.
@@ -37,7 +37,7 @@ def task_info_to_dict(task: tuple) -> Dict[str, Union[int, str]]:
     """
     Принимает tuple - запись из БД и конвертирует ее в словарь.
 
-    :param task: Tuple - запись о задачи из БД.
+    :param task: Tuple - запись о задаче из БД.
     :return: Словарь - описание задачи.
     """
     return {
