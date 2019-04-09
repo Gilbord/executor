@@ -20,15 +20,11 @@ services:
       python -m aiohttp.web -H 0.0.0.0 -P 5000 server.main:init
     ports:
       - 5000:5000
-    networks:
-      - executor_default
     depends_on:
       - worker
 
   redis:
     image: redis
-    networks:
-      - executor_default
 
   worker:
     <<: *volumes
@@ -43,8 +39,6 @@ services:
     command:
       >
       python -m executor.worker
-    networks:
-      - executor_default
     depends_on:
       - redis
 
@@ -52,8 +46,6 @@ services:
     image: postgres_executor:latest
     ports:
       - 5432:5432
-    networks:
-      - executor_default
     environment:
       POSTGRES_DB: executor
       POSTGRES_USER: user
@@ -64,7 +56,3 @@ services:
 volumes:
   postgres:
     driver: local
-
-networks:
-  executor_default:
-    external: true
