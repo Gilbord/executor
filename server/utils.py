@@ -1,13 +1,13 @@
 import os
 from datetime import datetime
-from typing import Optional, Dict, Union
+from typing import Optional, Dict, Union, Iterable
 
 import psycopg2
 from psycopg2._psycopg import connection
 from psycopg2.extensions import cursor
 
 
-def fetch_by_one(db_cursor: cursor) -> tuple:
+def fetch_by_one(db_cursor: cursor) -> Iterable[tuple]:
     """
     Вытаскивает все записи из БД.
 
@@ -33,7 +33,7 @@ def format_date(date: datetime) -> Optional[str]:
     return date.strftime('%Y-%m-%d %H:%M:%S:%f')
 
 
-def task_info_to_dict(task: tuple) -> Dict['str', Union[int, str]]:
+def task_info_to_dict(task: tuple) -> Dict[str, Union[int, str]]:
     """
     Принимает tuple - запись из БД и конвертирует ее в словарь.
 
