@@ -1,0 +1,71 @@
+version: '3.4'
+
+x-volumes: &volumes
+  volumes:
+    - ./:/opt/project
+
+services:
+
+  api:
+    <<: *volumes
+    image: executor:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+      POSTGRES_DBNAME: executor
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres
+    command:
+      >
+      python -m aiohttp.web -H 0.0.0.0 -P 5000 server.main:init
+    ports:
+      - 5000:5000
+    networks:
+      - executor_default
+    depends_on:
+      - worker
+
+  redis:
+    image: redis
+    networks:
+      - executor_default
+
+  worker:
+    <<: *volumes
+    image: worker:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+      POSTGRES_DBNAME: executor
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres
+      MAX_TASK_NUMBER: 2
+    command:
+      >
+      python -m executor.worker
+    networks:
+      - executor_default
+    depends_on:
+      - redis
+      - postgres
+
+  postgres:
+    image: postgres_executor:latest
+    ports:
+      - 5432:5432
+    networks:
+      - executor_default
+    environment:
+      POSTGRES_DB: executor
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+volumes:
+  postgres:
+    driver: local
+
+networks:
+  executor_default:
+    external: true

@@ -1,0 +1,6 @@
+FROM python:3.7
+MAINTAINER gilbord
+WORKDIR /opt/project
+ADD pyproject.toml /opt/project/
+ADD poetry.lock /opt/project/
+RUN pip install --no-cache-dir --user poetry && python -m poetry config settings.virtualenvs.create false && python -m poetry install
