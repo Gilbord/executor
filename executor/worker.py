@@ -20,24 +20,40 @@ logger.addHandler(ch)
 
 
 class Worker:
+    """
+    Выполняет задачи.
+    """
 
     def __init__(self):
-        logger.debug('Registering birth')
+        logger.info('Registering birth')
         self.redis = StrictRedis.from_url(os.environ['REDIS_URL'])
         self.max_workers = int(os.environ['MAX_TASK_NUMBER'])
-        self.postgres = psycopg2.connect(
-            dbname=os.environ['POSTGRES_DBNAME'],
-            user=os.environ['POSTGRES_USER'],
-            password=os.environ['POSTGRES_PASSWORD'],
-            host=os.environ['POSTGRES_HOST'],
-        )
+        self._postgres_connection = None
+
+    def _get_postgres_connection(self):
+        """
+        Возвращает соединение, если оно уже установлено. В обратном случае, устанавливает его.
+        Нужно, чтобы сразу подключение не создавалось, т. к. при поднятии всех image' ей docker' а
+        postgresql не успевает запуститься.
+        :return:
+        """
+        if self._postgres_connection is not None:
+            return self._postgres_connection
+        else:
+            self._postgres_connection = psycopg2.connect(
+                dbname=os.environ['POSTGRES_DBNAME'],
+                user=os.environ['POSTGRES_USER'],
+                password=os.environ['POSTGRES_PASSWORD'],
+                host=os.environ['POSTGRES_HOST'],
+            )
+            return self._postgres_connection
 
     def work(self):
         task: bytes = self.redis.lpop('queue')
         if task:
-            logger.debug(str(task))
             func_name, task_id = task.decode('utf-8').split(':')
-            with self.postgres.cursor() as cursor:
+            logger.info(f'Start running task with id: {task_id}')
+            with self._get_postgres_connection().cursor() as cursor:
                 cursor.execute(
                     """
                     UPDATE tasks
@@ -47,10 +63,13 @@ class Worker:
                     """,
                     (datetime.utcnow(), 'RUNNING', int(task_id))
                 )
-                self.postgres.commit()
+                self._get_postgres_connection().commit()
                 func = self.redis.hget('funcs', func_name)
+                pickled_function = pickle.loads(func)
                 start_time = datetime.now()
-                pickle.loads(func)()
+                pickled_function()
+                end_time = datetime.now()
+                logger.info(f'Stop running task with id: {task_id}')
                 cursor.execute(
                     """
                     UPDATE tasks
@@ -59,27 +78,26 @@ class Worker:
                         time_to_execute = %s
                     WHERE task_id = %s;
                     """,
-                    (datetime.utcnow(), 'COMPLETED', (start_time - datetime.now()).microseconds, int(task_id))
+                    (
+                        datetime.utcnow(),
+                        'COMPLETED',
+                        (start_time - end_time).microseconds,
+                        int(task_id)
+                    )
                 )
-                self.postgres.commit()
-
-    def start(self):
-        while True:
-            self.work()
-            sleep(5)
+                self._get_postgres_connection().commit()
 
 
-def test():
+def start_worker():
     worker = Worker()
     while True:
         worker.work()
-        sleep(1)
+        sleep(0.1)
 
 
 if __name__ == '__main__':
     executor = ProcessPoolExecutor(max_workers=int(os.environ['MAX_TASK_NUMBER']))
     loop = asyncio.get_event_loop()
     for _ in range(int(os.environ['MAX_TASK_NUMBER'])):
-        asyncio.ensure_future(loop.run_in_executor(executor, test))
+        asyncio.ensure_future(loop.run_in_executor(executor, start_worker))
     loop.run_forever()
-    #worker.start()

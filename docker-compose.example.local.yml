@@ -47,7 +47,6 @@ services:
       - executor_default
     depends_on:
       - redis
-      - postgres
 
   postgres:
     image: postgres_executor:latest
