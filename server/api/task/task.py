@@ -49,9 +49,9 @@ async def get_task_info(request: web.Request):
             )
 
 
-async def get_all_tasks_info(request: web.Request):
+async def get_latest_20_tasks_info(request: web.Request):
     """
-    Возвращает информацию о последних 20 статусах задач.
+    Возвращает информацию о статусах последних 20 задач.
 
     Example request:
         HTTP GET /tasks
