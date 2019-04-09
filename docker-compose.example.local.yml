@@ -37,6 +37,7 @@ services:
     command: python -m executor.worker
     depends_on:
       - redis
+      - postgres
 
   postgres:
     image: postgres_executor:latest
